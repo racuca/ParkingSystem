@@ -1,7 +1,21 @@
 import wx
 
 
-class TabPanel(wx.Panel):
+class TabPanel1(wx.Panel):
+    # ----------------------------------------------------------------------
+    def __init__(self, parent):
+        """"""
+        wx.Panel.__init__(self, parent=parent)
+
+        colors = ["red", "blue", "gray", "yellow", "green"]
+        #self.SetBackgroundColour(random.choice(colors))
+
+        btn = wx.Button(self, label="Press Me")
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(btn, 0, wx.ALL, 10)
+        self.SetSizer(sizer)
+
+class TabPanel2(wx.Panel):
     # ----------------------------------------------------------------------
     def __init__(self, parent):
         """"""
@@ -37,15 +51,15 @@ class MyFrame(wx.Frame):
 
         # create tab on panel2
         notebook = wx.Notebook(panel2)
-        tabOne = TabPanel(notebook)
+        tabOne = TabPanel1(notebook)
         notebook.AddPage(tabOne, "Tab 1")
 
-        tabTwo = TabPanel(notebook)
+        tabTwo = TabPanel2(notebook)
         notebook.AddPage(tabTwo, "Tab 2")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(notebook, 1, wx.EXPAND)
-        self.SetSizer(sizer)
+        sizer.Add(notebook, 1, flag=wx.EXPAND)
+        panel2.SetSizer(sizer)
 
 
         self.Centre()
