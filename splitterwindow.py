@@ -1,4 +1,6 @@
 import wx
+import wx.glcanvas
+from OpenGL.GL import glGetString, GL_VERSION
 
 
 class TabPanel1(wx.Panel):
@@ -41,16 +43,16 @@ class MyFrame(wx.Frame):
         self.splitter = wx.SplitterWindow(self, -1, style=wx.SP_3D, name="splitterWindow")
         self.splitter.SetMinimumPaneSize(200)
 
-        panel1 = wx.Panel(self.splitter, -1)
-        panel1.SetBackgroundColour(wx.LIGHT_GREY)
+        self.panel1 = wx.Panel(self.splitter, -1)
+        self.panel1.SetBackgroundColour(wx.LIGHT_GREY)
 
-        panel2 = wx.Panel(self.splitter, -1)
-        panel2.SetBackgroundColour(wx.LIGHT_GREY)
+        self.panel2 = wx.Panel(self.splitter, -1)
+        self.panel2.SetBackgroundColour(wx.LIGHT_GREY)
 
-        self.splitter.SplitVertically(panel1, panel2, sashPosition=800)
+        self.splitter.SplitVertically(self.panel1, self.panel2, sashPosition=800)
 
         # create tab on panel2
-        notebook = wx.Notebook(panel2)
+        notebook = wx.Notebook(self.panel2)
         tabOne = TabPanel1(notebook)
         notebook.AddPage(tabOne, "Tab 1")
 
@@ -59,10 +61,29 @@ class MyFrame(wx.Frame):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(notebook, 1, flag=wx.EXPAND)
-        panel2.SetSizer(sizer)
+        self.panel2.SetSizer(sizer)
+
+
+        # create GR Framework OpenGL
+        gl_canvas_attribs = [wx.glcanvas.WX_GL_RGBA,
+                             wx.glcanvas.WX_GL_DOUBLEBUFFER,
+                             wx.glcanvas.WX_GL_DEPTH_SIZE, 16]
+        self.gl_canvas = wx.glcanvas.GLCanvas(self.panel1, attribList=gl_canvas_attribs)
+        self.gl_context = wx.glcanvas.GLContext(self.gl_canvas)
+        self.gl_canvas.SetMinSize((800,600))
+        self.gl_canvas.Bind(wx.EVT_PAINT, self.on_paint_gl_canvas)
+
+        self.panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.panel_sizer.Add(self.gl_canvas, 1, wx.EXPAND)
+        self.panel1.SetSizerAndFit(self.panel_sizer)
 
 
         self.Centre()
+
+
+    def on_paint_gl_canvas(self, evt):
+        self.gl_canvas.SetCurrent(self.gl_context)
+        print(glGetString(GL_VERSION))
 
 #---------------------------------------------------------------------------
 
@@ -71,10 +92,9 @@ class MyApp(wx.App):
         frame = MyFrame(None, -1, 'wx.SplitterWindow')
         frame.Show(True)
         self.SetTopWindow(frame)
-
         return True
 
 #---------------------------------------------------------------------------
 
-app = MyApp(0)
+app = MyApp()
 app.MainLoop()
