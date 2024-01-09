@@ -36,16 +36,16 @@ class MyFrame(wx.Frame):
         self.splitter.SplitVertically(panel1, panel2, sashPosition=800)
 
         # create tab on panel2
-        #notebook = wx.Notebook(panel2)
-        #tabOne = TabPanel(notebook)
-        #notebook.AddPage(tabOne, "Tab 1")
+        notebook = wx.Notebook(panel2)
+        tabOne = TabPanel(notebook)
+        notebook.AddPage(tabOne, "Tab 1")
 
-        #tabTwo = TabPanel(notebook)
-        #notebook.AddPage(tabTwo, "Tab 2")
+        tabTwo = TabPanel(notebook)
+        notebook.AddPage(tabTwo, "Tab 2")
 
-        #sizer = wx.BoxSizer(wx.VERTICAL)
-        #sizer.Add(notebook, 1, wx.EXPAND)
-        #self.SetSizer(sizer)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(notebook, 1, wx.EXPAND)
+        self.SetSizer(sizer)
 
 
         self.Centre()
