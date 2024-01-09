@@ -63,11 +63,6 @@ class MyFrame(wx.Frame):
         tabTwo = wx.Panel(notebook)
         notebook.AddPage(tabTwo, "Tab 2")
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(notebook, 1, flag=wx.EXPAND)
-        self.panel2.SetSizer(sizer)
-
-
         # create GR Framework OpenGL
         gl_canvas_attribs = [wx.glcanvas.WX_GL_RGBA,
                              wx.glcanvas.WX_GL_DOUBLEBUFFER,
@@ -96,11 +91,20 @@ class MyFrame(wx.Frame):
         self.color_panel_sizer.Add(wx.StaticText(self.color_panel, label="Value:"))
         self.color_panel_sizer.Add(self.value_slider)
         self.color_panel_sizer.Add(wx.StaticText(self.color_panel, label="HTML hex code:"))
-        self.color_panel_sizer.Add(self.html_notation_box,0,wx.EXPAND | wx.ALL, 4)
+        self.color_panel_sizer.Add(self.html_notation_box, 0, wx.EXPAND | wx.ALL, 4)
         self.color_panel.SetSizerAndFit(self.color_panel_sizer)
 
+
+        mainpanelsizer = wx.BoxSizer(wx.HORIZONTAL)
+        mainpanelsizer.Add(self.gl_canvas, 1, wx.EXPAND)
+        self.panel1.SetSizerAndFit(mainpanelsizer)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(notebook, 1, flag=wx.EXPAND)
+        self.panel2.SetSizer(sizer)
+
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.sizer.Add(self.splitter,1,wx.EXPAND)
+        self.sizer.Add(self.splitter, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
         self.Centre()
