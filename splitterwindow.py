@@ -94,11 +94,12 @@ class MyFrame(wx.Frame):
         self.color_panel_sizer.Add(self.html_notation_box, 0, wx.EXPAND | wx.ALL, 4)
         self.color_panel.SetSizerAndFit(self.color_panel_sizer)
 
-
+        # main panel sizer
         mainpanelsizer = wx.BoxSizer(wx.HORIZONTAL)
         mainpanelsizer.Add(self.gl_canvas, 1, wx.EXPAND)
         self.panel1.SetSizerAndFit(mainpanelsizer)
 
+        # tab panel sizer
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(notebook, 1, flag=wx.EXPAND)
         self.panel2.SetSizer(sizer)
