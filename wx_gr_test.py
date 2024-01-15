@@ -1,3 +1,6 @@
+# wxPython
+# PyOpenGL
+
 import wx
 import wx.glcanvas
 import gr3
