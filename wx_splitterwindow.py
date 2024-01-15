@@ -108,7 +108,7 @@ class MyFrame(wx.Frame):
         self.sizer.Add(self.splitter, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
-        self.Centre()
+        #self.Centre()
 
 
     def on_paint_gl_canvas(self,evt):
