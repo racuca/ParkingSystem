@@ -2,10 +2,55 @@
 # wxPython
 # pygame
 import os
+import random
+import threading
+import time
 
 import pygame
 import wx
 import colorsys
+
+SELF_TEST = 1
+
+class SDLThread:
+    def __init__(self, screen):
+        self.m_bKeepGoing = self.m_bRunning = False
+        self.screen = screen
+        self.color = (255,0,0)
+        self.rect = (10,10,100,100)
+
+    def Start(self):
+        self.m_bKeepGoing = self.m_bRunning = True
+        thread1 = threading.Thread(target=self.Run)
+        thread1.start()
+
+    def Stop(self):
+        self.m_bKeepGoing = False
+
+    def IsRunning(self):
+        return self.m_bRunning
+
+    def Run(self):
+        while self.m_bKeepGoing:
+            if self.screen is None:
+                continue
+            #if SELF_TEST:
+            #    time.sleep(1)
+            #    size = self.screen.get_size()
+            #    self.rect = (random.randint(0, size[0]),
+            #                 random.randint(0, size[1]), 100, 100)
+            #e = pygame.event.poll()
+            #if e.type == pygame.MOUSEBUTTONDOWN:
+            #    self.color = (255, 0, 128)
+            #    self.rect = (e.pos[0], e.pos[1], 100, 100)
+            #self.screen.fill(self.color, self.rect)
+            #pygame.display.flip()
+        self.m_bRunning = False
+
+    def setScreen(self, screen):
+        self.screen = screen
+        self.screen.fill((0,0,0))
+
 
 class PygameDisplay(wx.Window):
     def __init__(self, parent, ID):
@@ -27,6 +72,9 @@ class PygameDisplay(wx.Window):
         self.timer.Start(self.timespacing, False)
 
         self.linespacing = 5
+        #window = pygame.display.set_mode(self.size)
+        self.thread = SDLThread(None)
+        self.thread.Start()
 
     def Update(self, event):
         # Any update tasks would go here (moving sprites, advancing animation frames etc.)
@@ -37,8 +85,9 @@ class PygameDisplay(wx.Window):
         if self.size_dirty:
             self.screen = pygame.Surface(self.size, 0, 32)
             self.size_dirty = False
+            self.thread.setScreen(self.screen)
 
-        self.screen.fill((0,0,0))
+        self.screen.fill((240,240,240))
 
         cur = 0
 
@@ -46,8 +95,9 @@ class PygameDisplay(wx.Window):
         #while cur <= h:
         #    pygame.draw.aaline(self.screen, (255, 255, 255), (0, h - cur), (cur, 0))
         #    cur += self.linespacing
-        rect = pygame.Rect(100, 100, 100, 100)
-        pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
+        rect = pygame.Rect(random.randint(0, self.size[0]),
+                           random.randint(0, self.size[1]), 100, 100)
+        pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)
 
         s = pygame.image.tostring(self.screen, 'RGB')  # Convert the surface to an RGB string
         img = wx.Image(self.size[0], self.size[1], s)  # Load this string into a wx image
@@ -64,6 +114,7 @@ class PygameDisplay(wx.Window):
         self.size = self.parent.GetSize()
         print("PyGame panel", self.size)
         self.size_dirty = True
+        self.Redraw()
 
     def Kill(self, event):
         # Make sure Pygame can't be asked to redraw /before/ quitting by unbinding all methods which
@@ -71,8 +122,8 @@ class PygameDisplay(wx.Window):
         # (Otherwise wx seems to call Draw between quitting Pygame and destroying the frame)
         # This may or may not be necessary now that Pygame is just drawing to surfaces
         self.Unbind(event = wx.EVT_PAINT, handler = self.OnPaint)
-        self.Unbind(event = wx.EVT_TIMER, handler = self.Update, source=self.timer)
-
+        #self.Unbind(event = wx.EVT_TIMER, handler = self.Update, source=self.timer)
+        self.thread.Stop()
 
 class TabPanel1(wx.Panel):
     # ----------------------------------------------------------------------
@@ -146,6 +197,7 @@ class MyFrame(wx.Frame):
 
         self.Bind(wx.EVT_SCROLL, self.OnScroll)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_CLOSE, self.Kill)
 
     def Kill(self, event):
         self.display.Kill(event)
@@ -173,6 +225,6 @@ class MyApp(wx.App):
         return True
 
 #---------------------------------------------------------------------------
-
+pygame.init()
 app = MyApp()
 app.MainLoop()
