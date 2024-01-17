@@ -49,7 +49,7 @@ class SDLThread:
 
     def setScreen(self, screen):
         self.screen = screen
-        self.screen.fill((0,0,0))
+        #self.screen.fill((0,0,0))
 
 
 class PygameDisplay(wx.Window):
@@ -60,6 +60,7 @@ class PygameDisplay(wx.Window):
 
         self.size = parent.GetSize()
         self.size_dirty = True
+        self.screen = None
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
@@ -73,8 +74,8 @@ class PygameDisplay(wx.Window):
 
         self.linespacing = 5
         #window = pygame.display.set_mode(self.size)
-        self.thread = SDLThread(None)
-        self.thread.Start()
+        #self.thread = SDLThread(None)
+        #self.thread.Start()
 
     def Update(self, event):
         # Any update tasks would go here (moving sprites, advancing animation frames etc.)
@@ -83,11 +84,17 @@ class PygameDisplay(wx.Window):
     def Redraw(self):
         print("PyGame Redraw", self.size_dirty, self.size)
         if self.size_dirty:
-            self.screen = pygame.Surface(self.size, 0, 32)
-            self.size_dirty = False
-            self.thread.setScreen(self.screen)
+            if self.screen is None:
+                self.screen = pygame.Surface(self.size, 0, 32)
+                self.screen.fill((240, 240, 240))
+            else:
+                oldscreen = self.screen.copy()
+                self.screen = pygame.Surface(self.size, 0, 32)
+                self.screen.fill((240, 240, 240))
+                self.screen.blit(oldscreen, (0, 0))
 
-        self.screen.fill((240,240,240))
+            self.size_dirty = False
+            #self.thread.setScreen(self.screen)
 
         cur = 0
 
@@ -122,8 +129,8 @@ class PygameDisplay(wx.Window):
         # (Otherwise wx seems to call Draw between quitting Pygame and destroying the frame)
         # This may or may not be necessary now that Pygame is just drawing to surfaces
         self.Unbind(event = wx.EVT_PAINT, handler = self.OnPaint)
-        #self.Unbind(event = wx.EVT_TIMER, handler = self.Update, source=self.timer)
-        self.thread.Stop()
+        self.Unbind(event = wx.EVT_TIMER, handler = self.Update, source=self.timer)
+        #self.thread.Stop()
 
 class TabPanel1(wx.Panel):
     # ----------------------------------------------------------------------
