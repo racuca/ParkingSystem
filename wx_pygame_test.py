@@ -5,12 +5,38 @@ import os
 import random
 import threading
 import time
+from enum import IntEnum
 
 import pygame
 import wx
 import colorsys
 
 SELF_TEST = 1
+
+# 도형 Type
+class FigureType(IntEnum):
+    Rect = 0         # 직사각형
+    Square = 1       # 정사각형
+    Triangle = 3     # 삼각형
+    Eq_Triangle = 2  # 정삼각형
+    Ellipse = 4      # 타원
+    Circle = 5       # 원
+
+# 도형 정의 클래스
+class Figure:
+    def __init__(self, ftype):
+        self.figuretype = ftype
+        self.startpoint = (0, 0)
+        self.endpoint = (0, 0)
+        self.radius = 0
+        pass
+
+    def width(self):
+        return self.endpoint[0] - self.startpoint[0]
+
+    def height(self):
+        return self.endpoint[1] - self.startpoint[1]
+
 
 class SDLThread:
     def __init__(self, screen):
@@ -64,25 +90,29 @@ class PygameDisplay(wx.Window):
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.Bind(wx.EVT_TIMER, self.Update, self.timer)
+        self.Bind(wx.EVT_TIMER, self.update, self.timer)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.parent.Bind(wx.EVT_SIZE, self.OnSize)
 
         self.fps = 1.0
         self.timespacing = int(1000 / self.fps)
-        self.timer.Start(self.timespacing, False)
+        #self.timer.Start(self.timespacing, False)
 
         self.linespacing = 5
         #window = pygame.display.set_mode(self.size)
         #self.thread = SDLThread(None)
         #self.thread.Start()
 
-    def Update(self, event):
-        # Any update tasks would go here (moving sprites, advancing animation frames etc.)
-        self.Redraw()
+        self.figures = []
+        self.currentfigure = None #Figure(FigureType.Rect)
 
-    def Redraw(self):
-        print("PyGame Redraw", self.size_dirty, self.size)
+
+    def update(self, event):
+        # Any update tasks would go here (moving sprites, advancing animation frames etc.)
+        self.redraw()
+
+    def redraw(self):
+        #print("PyGame Redraw", self.size_dirty, self.size)
         if self.size_dirty:
             if self.screen is None:
                 self.screen = pygame.Surface(self.size, 0, 32)
@@ -96,15 +126,23 @@ class PygameDisplay(wx.Window):
             self.size_dirty = False
             #self.thread.setScreen(self.screen)
 
+        self.screen.fill((240, 240, 240))
         cur = 0
-
-        w, h = self.screen.get_size()
+        
+        # pygame 그리기 예제
+        #w, h = self.screen.get_size()
         #while cur <= h:
         #    pygame.draw.aaline(self.screen, (255, 255, 255), (0, h - cur), (cur, 0))
         #    cur += self.linespacing
-        rect = pygame.Rect(random.randint(0, self.size[0]),
-                           random.randint(0, self.size[1]), 100, 100)
-        pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)
+        #rect = pygame.Rect(random.randint(0, self.size[0]),
+        #                   random.randint(0, self.size[1]), 100, 100)
+        #pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)
+
+        # 도형 그리기
+        for f in self.figures:
+            if f.figuretype == FigureType.Rect:
+                rect = pygame.Rect(f.startpoint[0], f.startpoint[1], f.width(), f.height())
+                pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)
 
         s = pygame.image.tostring(self.screen, 'RGB')  # Convert the surface to an RGB string
         img = wx.Image(self.size[0], self.size[1], s)  # Load this string into a wx image
@@ -114,29 +152,48 @@ class PygameDisplay(wx.Window):
         del dc
 
     def OnPaint(self, event):
-        self.Redraw()
+        self.redraw()
         event.Skip()  # Make sure the parent frame gets told to redraw as well
 
     def OnSize(self, event):
         self.size = self.parent.GetSize()
         print("PyGame panel", self.size)
         self.size_dirty = True
-        self.Redraw()
+        self.redraw()
 
     def Kill(self, event):
         # Make sure Pygame can't be asked to redraw /before/ quitting by unbinding all methods which
         # call the Redraw() method
         # (Otherwise wx seems to call Draw between quitting Pygame and destroying the frame)
         # This may or may not be necessary now that Pygame is just drawing to surfaces
-        self.Unbind(event = wx.EVT_PAINT, handler = self.OnPaint)
-        self.Unbind(event = wx.EVT_TIMER, handler = self.Update, source=self.timer)
+        self.Unbind(event=wx.EVT_PAINT, handler=self.OnPaint)
+        #self.Unbind(event=wx.EVT_TIMER, handler=self.Update, source=self.timer)
         #self.thread.Stop()
+
+    def mousedown(self, ftype, x, y):
+        print("mouse down : ", (x, y))
+        self.currentfigure = Figure(ftype)
+        self.currentfigure.startpoint = (x, y)
+        self.figures.append(self.currentfigure)
+        pass
+
+    def mousedrag(self, x, y):
+        self.currentfigure.endpoint = (x, y)
+        self.redraw()
+
+    def mouseup(self, x, y):
+        if self.currentfigure is not None:
+            self.currentfigure.endpoint = (x, y)
+        self.currentfigure = None
+
 
 class TabPanel1(wx.Panel):
     # ----------------------------------------------------------------------
-    def __init__(self, parent):
+    def __init__(self, parent, display):
         """"""
         wx.Panel.__init__(self, parent=parent)
+
+        self.display = display
 
         colors = ["red", "blue", "gray", "yellow", "green"]
         #self.SetBackgroundColour(random.choice(colors))
@@ -151,13 +208,16 @@ class TabPanel1(wx.Panel):
         self.SetSizer(sizer)
 
     def onClick(self, event):
+        self.display.redraw()
         pass
 
 class TabPanel2(wx.Panel):
     # ----------------------------------------------------------------------
-    def __init__(self, parent):
+    def __init__(self, parent, display):
         """"""
         wx.Panel.__init__(self, parent=parent)
+
+        self.display = display
 
         colors = ["red", "blue", "gray", "yellow", "green"]
         #self.SetBackgroundColour(random.choice(colors))
@@ -168,6 +228,34 @@ class TabPanel2(wx.Panel):
         sizer.Add(btn, 0, wx.ALL, 10)
         self.SetSizer(sizer)
 
+        self.Bind(wx.EVT_BUTTON, self.onClick, btn)
+
+    def onClick(self, event):
+        self.display.redraw()
+        pass
+
+
+class TabPanel3(wx.Panel):
+    # ----------------------------------------------------------------------
+    def __init__(self, parent):
+        """"""
+        wx.Panel.__init__(self, parent=parent)
+
+        colors = ["red", "blue", "gray", "yellow", "green"]
+        #self.SetBackgroundColour(random.choice(colors))
+        self.SetBackgroundColour("white")
+
+        btn = wx.Button(self, label="Press Me Tab 3")
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(btn, 0, wx.ALL, 10)
+        self.SetSizer(sizer)
+
+        self.Bind(wx.EVT_BUTTON, self.onClick, btn)
+
+    def onClick(self, event):
+        self.display.redraw(None)
+        pass
+
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, id, title):
@@ -175,6 +263,11 @@ class MyFrame(wx.Frame):
 
         #wx.SystemOptions.SetOption("msw.notebook.themed-background", 0)
         #self.SetIcon(wx.Icon('./icons/wxwin.ico', wx.BITMAP_TYPE_ICO))
+        self.statusbar = self.CreateStatusBar()
+        self.statusbar.SetFieldsCount(4)
+        self.statusbar.SetStatusWidths([-3, -4, -1, -2])
+        self.statusbar.SetStatusText("Initializing...", 0)
+        self.statusbar.SetStatusText("100:1", 2)
 
         # splitter and two main panel
         self.splitter = wx.SplitterWindow(self, -1, style=wx.SP_3D, name="wxpython")
@@ -184,14 +277,19 @@ class MyFrame(wx.Frame):
         self.panel2 = wx.Panel(self.splitter, -1)
         self.splitter.SplitVertically(self.panel1, self.panel2, sashPosition=800)
 
+        self.display = PygameDisplay(self.panel1, -1)
+        self.panel1.Bind(wx.EVT_LEFT_DOWN, self.OnDown)
+        self.panel1.Bind(wx.EVT_LEFT_UP, self.OnUp)
+        self.panel1.Bind(wx.EVT_MOTION, self.OnDrag)
+
         # create tab on panel2
         notebook = wx.Notebook(self.panel2)
-        tabOne = TabPanel1(notebook)
-        notebook.AddPage(tabOne, "Tab 1")
-        tabTwo = TabPanel2(notebook)
-        notebook.AddPage(tabTwo, "Tab 2")
-
-        self.display = PygameDisplay(self.panel1, -1)
+        tabOne = TabPanel1(notebook, self.display)
+        notebook.AddPage(tabOne, "주차라인설정")
+        tabTwo = TabPanel2(notebook, self.display)
+        notebook.AddPage(tabTwo, "주차장설정")
+        tabThree = TabPanel3(notebook)
+        notebook.AddPage(tabThree, "공통설정")
 
         # tab panel sizer
         tabsizer = wx.BoxSizer(wx.VERTICAL)
@@ -206,13 +304,14 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_CLOSE, self.Kill)
 
+        self.statusbar.SetStatusText("Initialized.", 0)
+
     def Kill(self, event):
         self.display.Kill(event)
         self.Destroy()
 
     def OnSize(self, event):
         self.Layout()
-        #self.display = PygameDisplay(self.panel1, -1)
 
     def Update(self, event):
         self.curframe += 1
@@ -220,13 +319,35 @@ class MyFrame(wx.Frame):
 
     def OnScroll(self, event):
         self.display.linespacing = self.slider.GetValue()
+        print("Scroll", event)
 
+    def OnDown(self, event):
+        x, y = event.GetPosition()
+        print("Click coordinates: X=", x, " Y=", y)
+        self.display.mousedown(FigureType.Rect, x, y)
+
+    def OnUp(self, event):
+        x, y = event.GetPosition()
+        print("Release coordinates: X=", x, " Y=", y)
+        self.display.mouseup(x, y)
+
+    def OnDrag(self, event):
+        x, y = event.GetPosition()
+        if not event.Dragging():
+            event.Skip()
+            return
+        event.Skip()
+        # obj = event.GetEventObject()
+        # sx, sy = obj.GetScreenPosition()
+        # self.Move(sx+x,sy+y)
+        print("Dragging position", x, y)
+        self.display.mousedrag(x, y)
 
 #---------------------------------------------------------------------------
 
 class MyApp(wx.App):
     def OnInit(self):
-        frame = MyFrame(parent=None, id=-1, title='wx.SplitterWindow')
+        frame = MyFrame(parent=None, id=-1, title='Parking Manager')
         frame.Show(True)
         self.SetTopWindow(frame)
         return True
