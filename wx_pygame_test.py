@@ -1,6 +1,10 @@
 # used library
 # wxPython
 # pygame
+
+# Traffic Control System  - Parking Manager
+# 
+
 import os
 import random
 import threading
@@ -105,7 +109,8 @@ class PygameDisplay(wx.Window):
 
         self.figures = []
         self.currentfigure = None #Figure(FigureType.Rect)
-
+        
+        self.scalefactor = 1
 
     def update(self, event):
         # Any update tasks would go here (moving sprites, advancing animation frames etc.)
@@ -148,8 +153,11 @@ class PygameDisplay(wx.Window):
         img = wx.Image(self.size[0], self.size[1], s)  # Load this string into a wx image
         bmp = wx.Bitmap(img)  # Get the image in bitmap form
         dc = wx.ClientDC(self.parent)  # Device context for drawing the bitmap
+        dc.SetUserScale(self.scalefactor, self.scalefactor)
         dc.DrawBitmap(bmp, 0, 0, False)  # Blit the bitmap image to the display
+        print("scaled")
         del dc
+
 
     def OnPaint(self, event):
         self.redraw()
@@ -174,8 +182,7 @@ class PygameDisplay(wx.Window):
         print("mouse down : ", (x, y))
         self.currentfigure = Figure(ftype)
         self.currentfigure.startpoint = (x, y)
-        self.figures.append(self.currentfigure)
-        pass
+        self.figures.append(self.currentfigure)        
 
     def mousedrag(self, x, y):
         self.currentfigure.endpoint = (x, y)
@@ -237,24 +244,47 @@ class TabPanel2(wx.Panel):
 
 class TabPanel3(wx.Panel):
     # ----------------------------------------------------------------------
-    def __init__(self, parent):
+    def __init__(self, parent, display):
         """"""
         wx.Panel.__init__(self, parent=parent)
+
+        self.display = display
 
         colors = ["red", "blue", "gray", "yellow", "green"]
         #self.SetBackgroundColour(random.choice(colors))
         self.SetBackgroundColour("white")
 
         btn = wx.Button(self, label="Press Me Tab 3")
+        btn.Bind(wx.EVT_BUTTON, self.onClick)
+        
+        self.scale_slider = wx.Slider(self, value=100, minValue=0, maxValue=500)
+        self.scale_slider.Bind(wx.EVT_SCROLL, self.scale_changed)
+        self.spinctrl = wx.SpinCtrl(self, min=0, max=500, initial=100)
+        self.spinctrl.SetIncrement(10)
+        self.spinctrl.Bind(wx.EVT_SPINCTRL, self.scalespinchanged)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(btn, 0, wx.ALL, 10)
+        sizer.Add(self.scale_slider, 0, wx.ALL, 10)
+        sizer.Add(self.spinctrl, 0, wx.ALL, 10)
         self.SetSizer(sizer)
 
-        self.Bind(wx.EVT_BUTTON, self.onClick, btn)
-
     def onClick(self, event):
-        self.display.redraw(None)
+        print("btn")
+        self.display.redraw()
         pass
+
+    def scale_changed(self, event):
+        scale = self.scale_slider.GetValue()
+        self.display.scalefactor = round(scale / 100, 1)
+        print("scale", self.display.scalefactor)
+        self.spinctrl.SetValue(self.display.scalefactor * 100)
+        self.display.redraw()
+
+    def scalespinchanged(self, event):
+        val = event.GetPosition()
+        print("spin", val)
+        self.display.scalefactor = round(val / 100, 1)
+        self.display.redraw()
 
 
 class MyFrame(wx.Frame):
@@ -288,7 +318,7 @@ class MyFrame(wx.Frame):
         notebook.AddPage(tabOne, "주차라인설정")
         tabTwo = TabPanel2(notebook, self.display)
         notebook.AddPage(tabTwo, "주차장설정")
-        tabThree = TabPanel3(notebook)
+        tabThree = TabPanel3(notebook, self.display)
         notebook.AddPage(tabThree, "공통설정")
 
         # tab panel sizer
