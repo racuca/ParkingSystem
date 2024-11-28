@@ -1,9 +1,10 @@
 # Parkingsystem
 
-This is a parking and traffic control simulation tool.
+This is a parking and traffic control simulation tool and was made of wxpython and GR Framework.
 
 requirements
 
-Python 10.x
-PySide6
+pyqt5
+gr=1.23.3
+
 
